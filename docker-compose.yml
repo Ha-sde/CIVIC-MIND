@@ -1,0 +1,41 @@
+# Local stack: app + PostgreSQL.   docker compose up --build   ->  http://localhost:8000
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: civicmind
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-civicmind}
+      POSTGRES_DB: civicmind
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U civicmind -d civicmind"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "${PORT:-8000}:8000"
+    environment:
+      PORT: "8000"
+      DATABASE_URL: postgresql://civicmind:${POSTGRES_PASSWORD:-civicmind}@db:5432/civicmind
+      SECRET_KEY: ${SECRET_KEY:-change-this-to-a-long-random-string-before-deploying}
+      OTP_MODE: ${OTP_MODE:-demo}
+      DEMO_OTP: ${DEMO_OTP:-123456}
+      SEED_DEMO: ${SEED_DEMO:-true}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-sonnet-5-5}
+      MAP_DEFAULT: ${MAP_DEFAULT:-16.7050,74.2433}
+    volumes:
+      - uploads:/app/data/uploads
+
+volumes:
+  pgdata:
+  uploads:

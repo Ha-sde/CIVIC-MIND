@@ -1,0 +1,39 @@
+# Render Blueprint - Dashboard: New > Blueprint > pick this repo.
+databases:
+  - name: civicmind-db
+    plan: free            # free Postgres expires after 30 days; use "basic-256mb" or higher for real use
+    databaseName: civicmind
+    user: civicmind
+
+services:
+  - type: web
+    name: civic-mind
+    runtime: docker
+    plan: free            # free web services sleep when idle and have an EPHEMERAL disk (uploads are lost on restart)
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    # For permanent uploads upgrade the plan to "starter" and uncomment:
+    # disk:
+    #   name: uploads
+    #   mountPath: /app/data
+    #   sizeGB: 5
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: civicmind-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: OTP_MODE
+        value: demo
+      - key: DEMO_OTP
+        value: "123456"
+      - key: SEED_DEMO
+        value: "true"
+      - key: CLAUDE_MODEL
+        value: claude-sonnet-5-5
+      - key: MAP_DEFAULT
+        value: "16.7050,74.2433"
+      - key: ANTHROPIC_API_KEY
+        sync: false        # paste your key in the Render dashboard (optional - the app works without it)
